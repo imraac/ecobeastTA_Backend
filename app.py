@@ -100,6 +100,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_migrate import Migrate
 import os
+import json
 
 # Configuration
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -127,6 +128,23 @@ class SafariPackage(db.Model):
     description = db.Column(db.Text)
     route_map = db.Column(db.String(300))
 
+    overview = db.Column(db.Text)
+    day_by_day = db.Column(db.Text)
+    rates = db.Column(db.Text)
+    inclusions = db.Column(db.Text)
+    getting_there = db.Column(db.Text)
+    offered_by = db.Column(db.String(200))
+    tour_features = db.Column(db.Text)    # Stored as JSON string
+    route_details = db.Column(db.Text)
+    route_points = db.Column(db.Text)     # Stored as JSON string
+
+# Helper to safely parse JSON fields
+def safe_json_parse(raw):
+    try:
+        return json.loads(raw) if raw and raw.strip() else []
+    except json.JSONDecodeError:
+        return []
+
 # GET all safari packages
 @app.route("/api/safaris", methods=["GET"])
 def get_safaris():
@@ -140,8 +158,42 @@ def get_safaris():
         "rating": s.rating,
         "reviews": s.reviews,
         "description": s.description,
-        "routeMap": s.route_map
+        "routeMap": s.route_map,
+        "overview": s.overview,
+        "dayByDay": s.day_by_day,
+        "rates": s.rates,
+        "inclusions": s.inclusions,
+        "gettingThere": s.getting_there,
+        "offeredBy": s.offered_by,
+        "tourFeatures": safe_json_parse(s.tour_features),
+        "routeDetails": s.route_details,
+        "routePoints": safe_json_parse(s.route_points)
     } for s in safaris])
+
+# GET safari package by ID
+@app.route("/api/safaris/<int:id>", methods=["GET"])
+def get_safari_by_id(id):
+    s = SafariPackage.query.get_or_404(id)
+    return jsonify({
+        "id": s.id,
+        "title": s.title,
+        "priceRange": s.price_range,
+        "location": s.location,
+        "imageUrl": s.image_url,
+        "rating": s.rating,
+        "reviews": s.reviews,
+        "description": s.description,
+        "routeMap": s.route_map,
+        "overview": s.overview,
+        "dayByDay": s.day_by_day,
+        "rates": s.rates,
+        "inclusions": s.inclusions,
+        "gettingThere": s.getting_there,
+        "offeredBy": s.offered_by,
+        "tourFeatures": safe_json_parse(s.tour_features),
+        "routeDetails": s.route_details,
+        "routePoints": safe_json_parse(s.route_points)
+    })
 
 # POST new safari package(s)
 @app.route("/api/safaris", methods=["POST"])
@@ -158,15 +210,32 @@ def add_safari_or_safaris():
     created = []
     for item in safaris:
         try:
+            tour_features = item.get("tour_features")
+            if isinstance(tour_features, list):
+                tour_features = json.dumps(tour_features)
+
+            route_points = item.get("route_points")
+            if isinstance(route_points, list):
+                route_points = json.dumps(route_points)
+
             new_safari = SafariPackage(
                 title=item["title"],
-                price_range=item["price_range"],
-                location=item["location"],
-                image_url=item["image_url"],
-                rating=item["rating"],
-                reviews=item["reviews"],
-                description=item["description"],
-                route_map=item["route_map"]
+                price_range=item.get("price_range"),
+                location=item.get("location"),
+                image_url=item.get("image_url"),
+                rating=item.get("rating"),
+                reviews=item.get("reviews"),
+                description=item.get("description"),
+                route_map=item.get("route_map"),
+                overview=item.get("overview"),
+                day_by_day=item.get("day_by_day"),
+                rates=item.get("rates"),
+                inclusions=item.get("inclusions"),
+                getting_there=item.get("getting_there"),
+                offered_by=item.get("offered_by"),
+                tour_features=tour_features,
+                route_details=item.get("route_details"),
+                route_points=route_points
             )
             db.session.add(new_safari)
             created.append(new_safari)
@@ -176,6 +245,5 @@ def add_safari_or_safaris():
     db.session.commit()
     return jsonify({"message": f"{len(created)} safari package(s) added successfully"}), 201
 
-# Run app
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)  # you can change port here
+    app.run(debug=True, port=5000)

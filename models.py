@@ -12,3 +12,14 @@ class SafariPackage(db.Model):
     reviews = db.Column(db.Integer)
     description = db.Column(db.Text)
     route_map = db.Column(db.String(300))
+    overview = db.Column(db.Text)
+    day_by_day = db.Column(db.Text)
+    rates = db.Column(db.Text)
+    inclusions = db.Column(db.Text)
+    getting_there = db.Column(db.Text)
+    offered_by = db.Column(db.String(200))
+    
+    # Store lists as JSON strings
+    tour_features = db.Column(db.Text)     # Expected to store JSON list (e.g. ["Private tour", ...])
+    route_details = db.Column(db.Text)
+    route_points = db.Column(db.Text)      # New field: stores JSON list like ["Day 1: Nairobi", "Day 2: ..."]
