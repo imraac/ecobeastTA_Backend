@@ -271,7 +271,7 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # Gmail SMTP
-    MAIL_SERVER = 'smtp.gmail.com'
+    MAIL_SERVER = 'smtp.zoho.com'
     MAIL_PORT = 587
     MAIL_USE_TLS = True
     MAIL_USERNAME = os.getenv('MAIL_USERNAME')
@@ -458,7 +458,7 @@ def send_quote():
         # Prepare and send email (using HTML content)
         msg = Message(
             subject="New Safari Quote Request",
-            recipients=["2407984@students.kcau.ac.ke"]  # Adjust recipient as necessary
+            recipients=["info@ecobeasttravels.com"]  # Adjust recipient as necessary
         )
         msg.html = email_html  # Send the email with HTML content
 
