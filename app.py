@@ -248,16 +248,21 @@
 # if __name__ == "__main__":
 #     app.run(debug=True, port=5000)
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request ,make_response
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_migrate import Migrate
 from flask_mail import Mail, Message
 from dotenv import load_dotenv
-import os
-import json
-from models import SafariPackage 
 
+import json
+import re
+import os
+from flask_restful import Api, Resource
+import json
+from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt_identity
+from models import SafariPackage,User
+from flask_bcrypt import Bcrypt
 
 # Load environment variables
 load_dotenv()
@@ -277,6 +282,7 @@ class Config:
     MAIL_USERNAME = os.getenv('MAIL_USERNAME')
     MAIL_PASSWORD = os.getenv('MAIL_PASSWORD')
     MAIL_DEFAULT_SENDER = os.getenv('MAIL_USERNAME')
+    JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'super-secret-key')
  
 
 
@@ -286,7 +292,10 @@ app.config.from_object(Config)
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 mail = Mail(app)
+jwt = JWTManager(app)
+bcrypt = Bcrypt(app)
 CORS(app)
+api = Api(app)
 
 # SafariPackage model
 class SafariPackage(db.Model):
@@ -416,6 +425,51 @@ def add_safari_or_safaris():
     db.session.commit()
     return jsonify({"message": f"{len(created)} safari package(s) added successfully"}), 201
 
+@app.route("/api/send-charter-quote", methods=["POST"])
+def send_charter_quote():
+    data = request.get_json()
+
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+
+    try:
+        user = data.get("user")
+        required_user_fields = ["fullName", "email", "phone"]
+        for field in required_user_fields:
+            if not user or not user.get(field):
+                return jsonify({"error": f"Missing user field: {field}"}), 400
+
+        # Email content
+        email_html = f"""
+        <h2>New Air Charter Quote</h2>
+        <p><strong>Aircraft Type:</strong> {data.get("aircraftType")}</p>
+        <p><strong>Departure:</strong> {data.get("departure")}</p>
+        <p><strong>Destination:</strong> {data.get("destination")}</p>
+        <p><strong>Departure Date:</strong> {data.get("departureDate")}</p>
+        <p><strong>Departure Time:</strong> {data.get("departureTime")}</p>
+        <p><strong>Return Date:</strong> {data.get("returnDate") or "N/A"}</p>
+        <p><strong>Return Time:</strong> {data.get("returnTime") or "N/A"}</p>
+        <hr/>
+        <p><strong>Name:</strong> {user.get("fullName")}</p>
+        <p><strong>Email:</strong> {user.get("email")}</p>
+        <p><strong>Phone:</strong> {user.get("phone")}</p>
+        """
+
+        msg = Message(
+            subject="New Charter Quote Request",
+            recipients=["reservations@ecobeasttravels.com"]
+        )
+        msg.html = email_html
+        mail.send(msg)
+
+        return jsonify({"message": "Charter quote sent successfully"}), 200
+
+    except Exception as e:
+        print("Error sending charter quote:", e)
+        return jsonify({"error": "Failed to send email."}), 500
+
+
+
 @app.route("/api/send-quote", methods=["POST"])
 def send_quote():
     data = request.get_json()
@@ -489,6 +543,99 @@ def send_quote():
     except Exception as e:
         print("Email error:", e)
         return jsonify({"error": f"Failed to send quote: {str(e)}"}), 500
+class User(db.Model):
+    __tablename__ = 'users'
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password = db.Column(db.String(129), nullable=False)
+    role = db.Column(db.String(50), default='user')
+    created_at = db.Column(db.DateTime, default=db.func.now())
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "username": self.username,
+            "email": self.email,
+            "role": self.role,
+            "created_at": str(self.created_at),
+        }
+# Signup Resource
+class Users(Resource):
+    def post(self):
+        data = request.get_json()
+        if not data:
+            return make_response({"message": "No input data provided"}, 400)
+        
+        if User.query.filter_by(email=data.get('email')).first():
+            return make_response({"message": "Email already taken"}, 422)
+
+        hashed_password = bcrypt.generate_password_hash(data.get("password")).decode('utf-8')
+        new_user = User(
+            username=data.get("username"),
+            email=data.get("email"),
+            password=hashed_password,
+            role=data.get("role", "user")
+        )
+        db.session.add(new_user)
+        db.session.commit()
+
+        access_token = create_access_token(identity=new_user.id)
+        return make_response({
+            "user": new_user.to_dict(),
+            "access_token": access_token,
+            "success": True,
+            "message": "User has been created successfully"
+        }, 201)
+
+    @jwt_required()
+    def get(self):
+        users = User.query.all()
+        users_list = [user.to_dict() for user in users]
+        return make_response({"count": len(users_list), "users": users_list}, 200)
+
+# Login Resource
+class Login(Resource):
+    def post(self):
+        data = request.get_json()
+        if not data:
+            return make_response({"message": "No input data provided"}, 400)
+
+        email = data.get('email')
+        password = data.get('password')
+        user = User.query.filter_by(email=email).first()
+
+        if user and bcrypt.check_password_hash(user.password, password):
+            access_token = create_access_token(identity=user.id)
+            return make_response({
+                "user": user.to_dict(),
+                "access_token": access_token,
+                "success": True,
+                "message": "Login successful"
+            }, 200)
+
+        return make_response({"message": "Invalid credentials"}, 401)
+
+# Verify token resource
+class VerifyToken(Resource):
+    @jwt_required()
+    def post(self):
+        current_user_id = get_jwt_identity()
+        user = User.query.get(current_user_id)
+        if user:
+            return make_response({
+                "user": user.to_dict(),
+                "success": True,
+                "message": "Token is valid"
+            }, 200)
+        return make_response({"message": "Invalid token"}, 401)
+
+# Register routes
+api.add_resource(Users, "/api/users")
+api.add_resource(Login, "/api/login")
+api.add_resource(VerifyToken, "/api/verify-token")
+
+
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)

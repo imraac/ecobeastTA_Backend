@@ -11,6 +11,8 @@ python-dotenv = "*"
 flask-cors = "*"
 flask-mail = "*"
 flask-migrate = "*"
+flask-jwt-extended = "*"
+werkzeug = "*"
 
 [dev-packages]
 
