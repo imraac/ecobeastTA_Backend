@@ -13,6 +13,10 @@ flask-mail = "*"
 flask-migrate = "*"
 flask-jwt-extended = "*"
 werkzeug = "*"
+gunicorn = "*"
+flask-restful = "*"
+flask-bcrypt = "*"
+psycopg2-binary = "*"
 
 [dev-packages]
 

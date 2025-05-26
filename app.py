@@ -271,8 +271,21 @@ load_dotenv()
 # Configuration
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
+# class Config:
+#     SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(BASE_DIR, 'database.db')
+#     SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+#     # Gmail SMTP
+#     MAIL_SERVER = 'smtp.zoho.com'
+#     MAIL_PORT = 587
+#     MAIL_USE_TLS = True
+#     MAIL_USERNAME = os.getenv('MAIL_USERNAME')
+#     MAIL_PASSWORD = os.getenv('MAIL_PASSWORD')
+#     MAIL_DEFAULT_SENDER = os.getenv('MAIL_USERNAME')
+#     JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'super-secret-key')
+
 class Config:
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(BASE_DIR, 'database.db')
+    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # Gmail SMTP
@@ -283,6 +296,7 @@ class Config:
     MAIL_PASSWORD = os.getenv('MAIL_PASSWORD')
     MAIL_DEFAULT_SENDER = os.getenv('MAIL_USERNAME')
     JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'super-secret-key')
+
  
 
 
@@ -317,18 +331,17 @@ class SafariPackage(db.Model):
     tour_features = db.Column(db.Text)
     route_details = db.Column(db.Text)
     route_points = db.Column(db.Text)
-
+    is_archived = db.Column(db.Boolean, default=False, nullable=False)
 # Helper to safely parse JSON fields
 def safe_json_parse(raw):
     try:
         return json.loads(raw) if raw and raw.strip() else []
     except json.JSONDecodeError:
         return []
-
-# GET all safari packages
+# GET all safari packages (including archived)
 @app.route("/api/safaris", methods=["GET"])
 def get_safaris():
-    safaris = SafariPackage.query.all()
+    safaris = SafariPackage.query.all()  # no filter on is_archived
     return jsonify([{
         "id": s.id,
         "title": s.title,
@@ -347,13 +360,14 @@ def get_safaris():
         "offeredBy": s.offered_by,
         "tourFeatures": safe_json_parse(s.tour_features),
         "routeDetails": s.route_details,
-        "routePoints": safe_json_parse(s.route_points)
+        "routePoints": safe_json_parse(s.route_points),
+        "is_archived": s.is_archived  # add this field to send archive status
     } for s in safaris])
 
-# GET safari package by ID
+# GET safari package by ID, exclude archived as well
 @app.route("/api/safaris/<int:id>", methods=["GET"])
 def get_safari_by_id(id):
-    s = SafariPackage.query.get_or_404(id)
+    s = SafariPackage.query.filter_by(id=id, is_archived=False).first_or_404()
     return jsonify({
         "id": s.id,
         "title": s.title,
@@ -374,6 +388,7 @@ def get_safari_by_id(id):
         "routeDetails": s.route_details,
         "routePoints": safe_json_parse(s.route_points)
     })
+
 
 # POST new safari package(s)
 @app.route("/api/safaris", methods=["POST"])
@@ -425,6 +440,54 @@ def add_safari_or_safaris():
     db.session.commit()
     return jsonify({"message": f"{len(created)} safari package(s) added successfully"}), 201
 
+@app.route("/api/safaris/<int:safari_id>", methods=["PATCH"])
+def update_safari(safari_id):
+    data = request.get_json()
+    safari = SafariPackage.query.get_or_404(safari_id)
+
+    try:
+        for field in [
+            "title", "price_range", "location", "image_url", "rating", "reviews",
+            "description", "route_map", "overview", "day_by_day", "rates",
+            "inclusions", "getting_there", "offered_by", "tour_features",
+            "route_details", "route_points"
+        ]:
+            if field in data:
+                value = data[field]
+                # If tour_features or route_points is a list, serialize it
+                if field in ["tour_features", "route_points"] and isinstance(value, list):
+                    value = json.dumps(value)
+                setattr(safari, field, value)
+
+        db.session.commit()
+        return jsonify({"message": "Safari package updated successfully"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+@app.route("/api/safaris/<int:safari_id>/archive", methods=["PATCH"])
+def toggle_archive_safari(safari_id):
+    safari = SafariPackage.query.get_or_404(safari_id)
+    safari.is_archived = not safari.is_archived  # toggle
+    db.session.commit()
+    return jsonify({
+        "message": f"Safari package {'archived' if safari.is_archived else 'unarchived'} successfully",
+        "is_archived": safari.is_archived
+    })
+
+@app.route("/api/safaris/<int:safari_id>/unarchive", methods=["PATCH"])
+def unarchive_safari(safari_id):
+    safari = SafariPackage.query.get_or_404(safari_id)
+
+    if not safari.is_archived:
+        return jsonify({"message": "Safari package is already active", "is_archived": False}), 200
+
+    safari.is_archived = False
+    db.session.commit()
+    return jsonify({
+        "message": "Safari package unarchived successfully",
+        "is_archived": safari.is_archived
+    }), 200
+
+
 @app.route("/api/send-charter-quote", methods=["POST"])
 def send_charter_quote():
     data = request.get_json()
@@ -468,7 +531,7 @@ def send_charter_quote():
         print("Error sending charter quote:", e)
         return jsonify({"error": "Failed to send email."}), 500
 
-
+  
 
 @app.route("/api/send-quote", methods=["POST"])
 def send_quote():

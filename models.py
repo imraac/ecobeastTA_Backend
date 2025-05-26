@@ -23,7 +23,7 @@ class SafariPackage(db.Model):
     tour_features = db.Column(db.Text)     # Expected to store JSON list (e.g. ["Private tour", ...])
     route_details = db.Column(db.Text)
     route_points = db.Column(db.Text)      # New field: stores JSON list like ["Day 1: Nairobi", "Day 2: ..."]
-
+    is_archived = db.Column(db.Boolean, default=False, nullable=False)
 
 
 class User(db.Model):
