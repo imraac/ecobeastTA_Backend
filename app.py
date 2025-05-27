@@ -356,7 +356,7 @@ def get_safaris():
     } for s in safaris])
 
 # GET safari package by ID, exclude archived as well
-@app.route("/safaris/<int:id>", methods=["GET"])
+@app.route("/api/safaris/<int:id>", methods=["GET"])
 def get_safari_by_id(id):
     s = SafariPackage.query.filter_by(id=id, is_archived=False).first_or_404()
     return jsonify({
@@ -454,7 +454,7 @@ def update_safari(safari_id):
         return jsonify({"message": "Safari package updated successfully"})
     except Exception as e:
         return jsonify({"error": str(e)}), 400
-@app.route("/safaris/<int:safari_id>/archive", methods=["PATCH"])
+@app.route("/api/safaris/<int:safari_id>/archive", methods=["PATCH"])
 def toggle_archive_safari(safari_id):
     safari = SafariPackage.query.get_or_404(safari_id)
     safari.is_archived = not safari.is_archived  # toggle
@@ -479,7 +479,7 @@ def unarchive_safari(safari_id):
     }), 200
 
 
-@app.route("/send-charter-quote", methods=["POST"])
+@app.route("/api/send-charter-quote", methods=["POST"])
 def send_charter_quote():
     data = request.get_json()
 
@@ -524,7 +524,7 @@ def send_charter_quote():
 
   
 
-@app.route("/send-quote", methods=["POST"])
+@app.route("/api/send-quote", methods=["POST"])
 def send_quote():
     data = request.get_json()
 
