@@ -326,7 +326,7 @@ def safe_json_parse(raw):
     except json.JSONDecodeError:
         return []
 # GET all safari packages (including archived)
-@app.route("/api/safaris", methods=["GET"])
+@app.route("/safaris", methods=["GET"])
 def get_safaris():
     safaris = SafariPackage.query.all()  # no filter on is_archived
     return jsonify([{
@@ -352,7 +352,7 @@ def get_safaris():
     } for s in safaris])
 
 # GET safari package by ID, exclude archived as well
-@app.route("/api/safaris/<int:id>", methods=["GET"])
+@app.route("/safaris/<int:id>", methods=["GET"])
 def get_safari_by_id(id):
     s = SafariPackage.query.filter_by(id=id, is_archived=False).first_or_404()
     return jsonify({
@@ -378,7 +378,7 @@ def get_safari_by_id(id):
 
 
 # POST new safari package(s)
-@app.route("/api/safaris", methods=["POST"])
+@app.route("/safaris", methods=["POST"])
 def add_safari_or_safaris():
     data = request.get_json()
 
@@ -427,7 +427,7 @@ def add_safari_or_safaris():
     db.session.commit()
     return jsonify({"message": f"{len(created)} safari package(s) added successfully"}), 201
 
-@app.route("/api/safaris/<int:safari_id>", methods=["PATCH"])
+@app.route("/safaris/<int:safari_id>", methods=["PATCH"])
 def update_safari(safari_id):
     data = request.get_json()
     safari = SafariPackage.query.get_or_404(safari_id)
@@ -450,7 +450,7 @@ def update_safari(safari_id):
         return jsonify({"message": "Safari package updated successfully"})
     except Exception as e:
         return jsonify({"error": str(e)}), 400
-@app.route("/api/safaris/<int:safari_id>/archive", methods=["PATCH"])
+@app.route("/safaris/<int:safari_id>/archive", methods=["PATCH"])
 def toggle_archive_safari(safari_id):
     safari = SafariPackage.query.get_or_404(safari_id)
     safari.is_archived = not safari.is_archived  # toggle
@@ -460,7 +460,7 @@ def toggle_archive_safari(safari_id):
         "is_archived": safari.is_archived
     })
 
-@app.route("/api/safaris/<int:safari_id>/unarchive", methods=["PATCH"])
+@app.route("/safaris/<int:safari_id>/unarchive", methods=["PATCH"])
 def unarchive_safari(safari_id):
     safari = SafariPackage.query.get_or_404(safari_id)
 
@@ -475,7 +475,7 @@ def unarchive_safari(safari_id):
     }), 200
 
 
-@app.route("/api/send-charter-quote", methods=["POST"])
+@app.route("/send-charter-quote", methods=["POST"])
 def send_charter_quote():
     data = request.get_json()
 
@@ -520,7 +520,7 @@ def send_charter_quote():
 
   
 
-@app.route("/api/send-quote", methods=["POST"])
+@app.route("/send-quote", methods=["POST"])
 def send_quote():
     data = request.get_json()
 
