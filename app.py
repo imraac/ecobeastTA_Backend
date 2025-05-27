@@ -271,21 +271,9 @@ load_dotenv()
 # Configuration
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-# class Config:
-#     SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(BASE_DIR, 'database.db')
-#     SQLALCHEMY_TRACK_MODIFICATIONS = False
-
-#     # Gmail SMTP
-#     MAIL_SERVER = 'smtp.zoho.com'
-#     MAIL_PORT = 587
-#     MAIL_USE_TLS = True
-#     MAIL_USERNAME = os.getenv('MAIL_USERNAME')
-#     MAIL_PASSWORD = os.getenv('MAIL_PASSWORD')
-#     MAIL_DEFAULT_SENDER = os.getenv('MAIL_USERNAME')
-#     JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'super-secret-key')
-
 class Config:
     SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL")
+
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # Gmail SMTP
@@ -296,7 +284,6 @@ class Config:
     MAIL_PASSWORD = os.getenv('MAIL_PASSWORD')
     MAIL_DEFAULT_SENDER = os.getenv('MAIL_USERNAME')
     JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'super-secret-key')
-
  
 
 
