@@ -691,5 +691,7 @@ api.add_resource(VerifyToken, "/api/verify-token")
 
 
 
-if __name__ == '__main__':
-    app.run(debug=True)
+if __name__ == "__main__":
+    # Only run the development server locally
+    if os.environ.get("RAILWAY_ENVIRONMENT") is None:
+        app.run(debug=True)
