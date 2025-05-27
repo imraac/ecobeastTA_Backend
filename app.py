@@ -464,7 +464,7 @@ def toggle_archive_safari(safari_id):
         "is_archived": safari.is_archived
     })
 
-@app.route("/safaris/<int:safari_id>/unarchive", methods=["PATCH"])
+@app.route("/api/safaris/<int:safari_id>/unarchive", methods=["PATCH"])
 def unarchive_safari(safari_id):
     safari = SafariPackage.query.get_or_404(safari_id)
 
