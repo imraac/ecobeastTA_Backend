@@ -382,7 +382,7 @@ def get_safari_by_id(id):
 
 
 # POST new safari package(s)
-@app.route("/safaris", methods=["POST"])
+@app.route("/api/safaris", methods=["POST"])
 def add_safari_or_safaris():
     data = request.get_json()
 
