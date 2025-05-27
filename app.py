@@ -689,8 +689,7 @@ api.add_resource(Login, "/api/login")
 api.add_resource(VerifyToken, "/api/verify-token")
 
 
-import os
 
-if __name__ == "__main__":
-    if os.environ.get("RAILWAY_ENVIRONMENT") is None:
-        app.run(debug=True, port=5000)
+
+if __name__ == '__main__':
+    app.run(debug=True)
