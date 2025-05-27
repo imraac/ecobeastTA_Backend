@@ -273,6 +273,7 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 class Config:
     SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL")
+    # SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(BASE_DIR, 'database.db')
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
@@ -326,7 +327,7 @@ def safe_json_parse(raw):
     except json.JSONDecodeError:
         return []
 # GET all safari packages (including archived)
-@app.route("/safaris", methods=["GET"])
+@app.route("/api/safaris", methods=["GET"])
 def get_safaris():
     safaris = SafariPackage.query.all()  # no filter on is_archived
     return jsonify([{
