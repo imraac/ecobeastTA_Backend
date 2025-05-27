@@ -267,16 +267,18 @@ from flask_bcrypt import Bcrypt
 # Load environment variables
 load_dotenv()
 
-
+db_url = os.getenv("DATABASE_URL")
+if db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
 # Configuration
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-
+load_dotenv() 
 class Config:
     SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL")
     # SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(BASE_DIR, 'database.db')
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-
+    
     # Gmail SMTP
     MAIL_SERVER = 'smtp.zoho.com'
     MAIL_PORT = 587
