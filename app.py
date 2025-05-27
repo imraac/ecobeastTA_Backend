@@ -431,7 +431,7 @@ def add_safari_or_safaris():
     db.session.commit()
     return jsonify({"message": f"{len(created)} safari package(s) added successfully"}), 201
 
-@app.route("/safaris/<int:safari_id>", methods=["PATCH"])
+@app.route("/api/safaris/<int:safari_id>", methods=["PATCH"])
 def update_safari(safari_id):
     data = request.get_json()
     safari = SafariPackage.query.get_or_404(safari_id)
