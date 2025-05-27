@@ -298,7 +298,8 @@ migrate = Migrate(app, db)
 mail = Mail(app)
 jwt = JWTManager(app)
 bcrypt = Bcrypt(app)
-CORS(app)
+CORS(app, resources={r"/api/*": {"origins": "https://ecobeastta-production.up.railway.app"}})
+
 api = Api(app)
 
 # SafariPackage model
