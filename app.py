@@ -298,7 +298,7 @@ migrate = Migrate(app, db)
 mail = Mail(app)
 jwt = JWTManager(app)
 bcrypt = Bcrypt(app)
-CORS(app, resources={r"/api/*": {"origins": ""}})
+CORS(app, resources={r"/api/*": {"origins": "ecobeasttabackend-production.up.railway.app"}})
 
 api = Api(app)
 
