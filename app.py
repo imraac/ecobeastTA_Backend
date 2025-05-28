@@ -512,7 +512,7 @@ def send_charter_quote():
 
         msg = Message(
             subject="New Charter Quote Request",
-            recipients=["reservations@ecobeasttravels.com"]
+            recipients=["info@ecobeasttravels.com"]
         )
         msg.html = email_html
         mail.send(msg)
