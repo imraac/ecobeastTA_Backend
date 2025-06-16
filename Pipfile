@@ -17,6 +17,7 @@ gunicorn = "*"
 flask-restful = "*"
 flask-bcrypt = "*"
 psycopg2-binary = "*"
+gevent = "*"
 
 [dev-packages]
 
