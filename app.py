@@ -524,6 +524,44 @@ def send_charter_quote():
         return jsonify({"error": "Failed to send email."}), 500
 
   
+@app.route("/api/send-ticket-quote", methods=["POST"])
+def send_ticket_quote():
+    data = request.get_json()
+
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+
+    try:
+        full_name = data.get("fullName")
+        email = data.get("email")
+        destination = data.get("destination")
+        message = data.get("message")
+
+        required_fields = [("fullName", full_name), ("email", email), ("destination", destination)]
+        for field, value in required_fields:
+            if not value:
+                return jsonify({"error": f"Missing field: {field}"}), 400
+
+        email_html = f"""
+        <h2>New Air Ticketing Request</h2>
+        <p><strong>Name:</strong> {full_name}</p>
+        <p><strong>Email:</strong> {email}</p>
+        <p><strong>Destination:</strong> {destination}</p>
+        <p><strong>Message:</strong> {message or "N/A"}</p>
+        """
+
+        msg = Message(
+            subject="New Air Ticketing Request",
+            recipients=["info@ecobeasttravels.com"]
+        )
+        msg.html = email_html
+        mail.send(msg)
+
+        return jsonify({"message": "Ticketing request sent successfully"}), 200
+
+    except Exception as e:
+        print("Error sending ticketing request:", e)
+        return jsonify({"error": "Failed to send email."}), 500
 
 @app.route("/api/send-quote", methods=["POST"])
 def send_quote():
