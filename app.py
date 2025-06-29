@@ -309,7 +309,7 @@ class SafariPackage(db.Model):
     title = db.Column(db.String(200), nullable=False)
     price_range = db.Column(db.String(100))
     location = db.Column(db.String(200))
-    image_url = db.Column(db.String(300))
+    image_urls = db.Column(db.Text)
     rating = db.Column(db.Float)
     reviews = db.Column(db.Integer)
     description = db.Column(db.Text)
@@ -339,7 +339,8 @@ def get_safaris():
         "title": s.title,
         "priceRange": s.price_range,
         "location": s.location,
-        "imageUrl": s.image_url,
+        "imageUrls": safe_json_parse(s.image_urls),
+
         "rating": s.rating,
         "reviews": s.reviews,
         "description": s.description,
@@ -365,7 +366,8 @@ def get_safari_by_id(id):
         "title": s.title,
         "priceRange": s.price_range,
         "location": s.location,
-        "imageUrl": s.image_url,
+        "imageUrls": safe_json_parse(s.image_urls),
+
         "rating": s.rating,
         "reviews": s.reviews,
         "description": s.description,
@@ -409,7 +411,9 @@ def add_safari_or_safaris():
                 title=item["title"],
                 price_range=item.get("price_range"),
                 location=item.get("location"),
-                image_url=item.get("image_url"),
+                # image_url=item.get("image_url"),
+                image_urls=json.dumps(item.get("image_urls", [])),
+
                 rating=item.get("rating"),
                 reviews=item.get("reviews"),
                 description=item.get("description"),
