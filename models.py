@@ -1,13 +1,12 @@
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import validates
 db = SQLAlchemy()
-
 class SafariPackage(db.Model):
+    __tablename__ = 'safari_package'
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
     price_range = db.Column(db.String(100))
     location = db.Column(db.String(200))
-    image_url = db.Column(db.String(300))
     rating = db.Column(db.Float)
     reviews = db.Column(db.Integer)
     description = db.Column(db.Text)
@@ -18,11 +17,14 @@ class SafariPackage(db.Model):
     inclusions = db.Column(db.Text)
     getting_there = db.Column(db.Text)
     offered_by = db.Column(db.String(200))
-    
-    tour_features = db.Column(db.Text)   
+    tour_features = db.Column(db.Text)
     route_details = db.Column(db.Text)
-    route_points = db.Column(db.Text)    
+    route_points = db.Column(db.Text)
     is_archived = db.Column(db.Boolean, default=False, nullable=False)
+
+    # 🔥 New: One-to-many relationship to SafariImage
+    images = db.relationship("SafariImage", back_populates="safari_package", cascade="all, delete-orphan")
+
 
 
 class User(db.Model):
@@ -53,3 +55,11 @@ class User(db.Model):
             "role": self.role,
             "created_at": str(self.created_at),
         }
+    
+
+class SafariImage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    safari_package_id = db.Column(db.Integer, db.ForeignKey('safari_package.id'), nullable=False)
+    image_url = db.Column(db.String(300), nullable=False)
+
+    safari_package = db.relationship('SafariPackage', backref=db.backref('images', lazy=True))

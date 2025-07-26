@@ -254,6 +254,8 @@ from flask_cors import CORS
 from flask_migrate import Migrate
 from flask_mail import Mail, Message
 from dotenv import load_dotenv
+from models import SafariImage  # or from app.models import SafariImage
+
 
 import json
 import re
@@ -303,6 +305,13 @@ CORS(app, supports_credentials=True, resources={r"/*": {"origins": "*"}})
 
 api = Api(app)
 
+class SafariImage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    image_url = db.Column(db.String(255), nullable=False)
+    safari_package_id = db.Column(db.Integer, db.ForeignKey('safari_package.id'), nullable=False)
+
+    safari_package = db.relationship("SafariPackage", backref="images")
+
 # SafariPackage model
 class SafariPackage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -330,16 +339,16 @@ def safe_json_parse(raw):
         return json.loads(raw) if raw and raw.strip() else []
     except json.JSONDecodeError:
         return []
-# GET all safari packages (including archived)
 @app.route("/api/safaris", methods=["GET"])
 def get_safaris():
-    safaris = SafariPackage.query.all()  # no filter on is_archived
+    safaris = SafariPackage.query.all()
     return jsonify([{
         "id": s.id,
         "title": s.title,
         "priceRange": s.price_range,
         "location": s.location,
         "imageUrl": s.image_url,
+        "imageGallery": [img.image_url for img in s.images],  # <-- new line
         "rating": s.rating,
         "reviews": s.reviews,
         "description": s.description,
@@ -353,10 +362,8 @@ def get_safaris():
         "tourFeatures": safe_json_parse(s.tour_features),
         "routeDetails": s.route_details,
         "routePoints": safe_json_parse(s.route_points),
-        "is_archived": s.is_archived  # add this field to send archive status
+        "is_archived": s.is_archived
     } for s in safaris])
-
-# GET safari package by ID, exclude archived as well
 @app.route("/api/safaris/<int:id>", methods=["GET"])
 def get_safari_by_id(id):
     s = SafariPackage.query.filter_by(id=id, is_archived=False).first_or_404()
@@ -366,6 +373,7 @@ def get_safari_by_id(id):
         "priceRange": s.price_range,
         "location": s.location,
         "imageUrl": s.image_url,
+        "imageGallery": [img.image_url for img in s.images],  # <-- new line
         "rating": s.rating,
         "reviews": s.reviews,
         "description": s.description,
@@ -409,7 +417,6 @@ def add_safari_or_safaris():
                 title=item["title"],
                 price_range=item.get("price_range"),
                 location=item.get("location"),
-                image_url=item.get("image_url"),
                 rating=item.get("rating"),
                 reviews=item.get("reviews"),
                 description=item.get("description"),
@@ -424,8 +431,18 @@ def add_safari_or_safaris():
                 route_details=item.get("route_details"),
                 route_points=route_points
             )
+
             db.session.add(new_safari)
+            db.session.flush()  # So we can get new_safari.id before commit
+
+            # Handle multiple image URLs
+            image_urls = item.get("images", [])
+            for url in image_urls:
+                image = SafariImage(image_url=url, safari_package_id=new_safari.id)
+                db.session.add(image)
+
             created.append(new_safari)
+
         except KeyError as e:
             return jsonify({"error": f"Missing field: {e}"}), 400
 
