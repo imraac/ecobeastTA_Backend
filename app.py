@@ -309,7 +309,7 @@ class SafariPackage(db.Model):
     title = db.Column(db.String(200), nullable=False)
     price_range = db.Column(db.String(100))
     location = db.Column(db.String(200))
-    image_url = db.Column(db.String(300))
+    images = db.Column(db.ARRAY(db.String))  # changed from image_url
     rating = db.Column(db.Float)
     reviews = db.Column(db.Integer)
     description = db.Column(db.Text)
@@ -324,12 +324,7 @@ class SafariPackage(db.Model):
     route_details = db.Column(db.Text)
     route_points = db.Column(db.Text)
     is_archived = db.Column(db.Boolean, default=False, nullable=False)
-# Helper to safely parse JSON fields
-def safe_json_parse(raw):
-    try:
-        return json.loads(raw) if raw and raw.strip() else []
-    except json.JSONDecodeError:
-        return []
+
 # GET all safari packages (including archived)
 @app.route("/api/safaris", methods=["GET"])
 def get_safaris():
