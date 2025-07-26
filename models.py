@@ -7,7 +7,7 @@ class SafariPackage(db.Model):
     title = db.Column(db.String(200), nullable=False)
     price_range = db.Column(db.String(100))
     location = db.Column(db.String(200))
-    image_urls = db.Column(db.Text) 
+    image_url = db.Column(db.String(300))
     rating = db.Column(db.Float)
     reviews = db.Column(db.Integer)
     description = db.Column(db.Text)
