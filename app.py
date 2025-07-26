@@ -409,7 +409,8 @@ def add_safari_or_safaris():
                 title=item["title"],
                 price_range=item.get("price_range"),
                 location=item.get("location"),
-                image_url=item.get("image_url"),
+                image_urls=json.dumps(item.get("image_urls", [])),
+
                 rating=item.get("rating"),
                 reviews=item.get("reviews"),
                 description=item.get("description"),
